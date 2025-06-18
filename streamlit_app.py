@@ -59,7 +59,7 @@ def main():
         # User Level and Stats
         if username != "Developer":
             user_stats = st.session_state.history_tracker.get_user_stats(username)
-            if user_stats['total_analyses'] > 0:
+            if user_stats.get('total_analyses', 0) > 0:
                 level_info = st.session_state.gamification.calculate_user_level(user_stats)
                 
                 st.header("🏆 Your Progress")
@@ -70,6 +70,14 @@ def main():
                 if level_info['next_level']:
                     progress_bar = st.progress(level_info['progress_to_next'] / 100)
                     st.write(f"Progress to {level_info['next_level_name']}: {level_info['progress_to_next']:.0f}%")
+        
+        # Global Leaderboard
+        st.header("🥇 Leaderboard")
+        leaderboard = st.session_state.history_tracker.get_leaderboard(5)
+        if leaderboard:
+            for i, leader in enumerate(leaderboard, 1):
+                emoji = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else "🏆"
+                st.write(f"{emoji} **{leader['username']}** - Avg: {leader['average_score']:.1f}/100")
         
         st.header("ℹ️ About")
         st.markdown("""
@@ -132,9 +140,16 @@ def main():
                     green_score = analyzer.calculate_green_score(analysis_results)
                     security_analysis = security_checker.analyze_security(code_input)
                 
-                # Store in history
+                # Calculate additional metrics for database storage
+                energy_data = carbon_calc.calculate_energy_consumption(analysis_results)
+                carbon_data = carbon_calc.calculate_carbon_footprint(energy_data)
+                
+                # Store in history with enhanced data
                 st.session_state.history_tracker.add_analysis(
-                    username, green_score, analysis_results, code_input[:100]
+                    username, green_score, analysis_results, code_input[:100],
+                    security_analysis['security_score'],
+                    energy_data['total_energy_uj'],
+                    carbon_data['carbon_emissions_g']
                 )
                 
                 # Display results with enhanced visualizations
