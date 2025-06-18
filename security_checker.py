@@ -130,7 +130,7 @@ class SecurityChecker:
                 
                 # Check for subprocess with shell=True
                 elif isinstance(node.func, ast.Attribute):
-                    if (hasattr(node.func.value, 'id') and 
+                    if (isinstance(node.func.value, ast.Name) and 
                         node.func.value.id == 'subprocess' and
                         any(keyword.arg == 'shell' and 
                             isinstance(keyword.value, ast.Constant) and 

@@ -12,6 +12,7 @@ from history_tracker import HistoryTracker
 from gamification import GamificationEngine
 from security_checker import SecurityChecker
 from ai_refactor import AIRefactorEngine
+from carbon_calculator import CarbonCalculator
 
 def main():
     st.set_page_config(
@@ -122,6 +123,7 @@ def main():
                 visualizer = CodeVisualization()
                 security_checker = SecurityChecker()
                 ai_refactor = AIRefactorEngine()
+                carbon_calc = CarbonCalculator()
                 
                 # Analyze code
                 with st.spinner("Analyzing your code..."):
@@ -137,7 +139,7 @@ def main():
                 
                 # Display results with enhanced visualizations
                 display_enhanced_results(analysis_results, suggestions, green_score, 
-                                       security_analysis, visualizer, username)
+                                       security_analysis, visualizer, username, carbon_calc)
                 
                 # Show AI refactoring suggestions
                 if st.button("🤖 Generate AI Refactor Suggestions", use_container_width=True):
@@ -179,11 +181,11 @@ def main():
         elif analyze_button:
             st.warning("⚠️ Please enter some Python code to analyze.")
 
-def display_enhanced_results(analysis_results, suggestions, green_score, security_analysis, visualizer, username):
+def display_enhanced_results(analysis_results, suggestions, green_score, security_analysis, visualizer, username, carbon_calc):
     """Display enhanced analysis results with visualizations and gamification"""
     
     # Create tabs for different views
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Dashboard", "🔍 Details", "🔒 Security", "🏆 Achievements", "📈 History"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 Dashboard", "🔍 Details", "🔒 Security", "🏆 Achievements", "📈 History", "🌍 Carbon Impact"])
     
     with tab1:
         # Green Score Gauge
@@ -250,7 +252,7 @@ def display_enhanced_results(analysis_results, suggestions, green_score, securit
         
         # Security recommendations
         st.subheader("🛡️ Security Best Practices")
-        security_recs = security_analysis.get('recommendations', [])
+        security_recs = security_checker.get_security_recommendations(security_analysis)
         for rec in security_recs:
             st.write(f"• {rec}")
     
@@ -309,6 +311,56 @@ def display_enhanced_results(analysis_results, suggestions, green_score, securit
                         st.code(entry['code_preview'])
         else:
             st.info("No analysis history yet. Complete more analyses to see your progress!")
+    
+    with tab6:
+        # Carbon Impact Analysis
+        st.subheader("🌍 Environmental Impact Analysis")
+        
+        energy_data = carbon_calc.calculate_energy_consumption(analysis_results)
+        carbon_data = carbon_calc.calculate_carbon_footprint(energy_data)
+        efficiency_rating = carbon_calc.get_efficiency_rating(analysis_results)
+        
+        # Main metrics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Energy Consumption", f"{energy_data['total_energy_uj']:.1f} μJ")
+        with col2:
+            st.metric("Carbon Emissions", carbon_data['carbon_display'])
+        with col3:
+            st.metric("Efficiency Rating", efficiency_rating)
+        
+        # Energy breakdown chart
+        if energy_data['energy_breakdown']:
+            import plotly.express as px
+            import pandas as pd
+            
+            breakdown_df = pd.DataFrame([
+                {'Category': k, 'Energy (μJ)': v} 
+                for k, v in energy_data['energy_breakdown'].items() if v > 0
+            ])
+            
+            if not breakdown_df.empty:
+                fig = px.pie(breakdown_df, values='Energy (μJ)', names='Category', 
+                           title="Energy Consumption Breakdown")
+                st.plotly_chart(fig, use_container_width=True)
+        
+        # Environmental equivalents
+        if carbon_data['equivalent_metrics']:
+            st.subheader("🌱 Environmental Context")
+            for metric, value in carbon_data['equivalent_metrics'].items():
+                st.write(f"• **{metric.replace('_', ' ').title()}:** {value}")
+        
+        # Optimization potential
+        issues_count = len(analysis_results.get('issues', []))
+        if issues_count > 0:
+            potential_savings = issues_count * 2.5  # Estimated energy savings
+            st.subheader("⚡ Optimization Potential")
+            st.info(f"By fixing the identified issues, you could potentially save approximately {potential_savings:.1f} μJ of energy per execution.")
+        
+        # Generate carbon report
+        if st.button("📄 Generate Carbon Report"):
+            carbon_report = carbon_calc.generate_carbon_report(analysis_results)
+            st.text_area("Carbon Footprint Report", carbon_report, height=300)
 
 def display_refactor_suggestions(refactor_results):
     """Display AI-generated refactoring suggestions"""

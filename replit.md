@@ -104,6 +104,14 @@ Green Code Checker is a Streamlit-based web application that analyzes Python cod
 ```
 Changelog:
 - June 18, 2025. Initial setup
+- June 18, 2025. Enhanced with advanced features:
+  * Interactive dashboard with Plotly charts
+  * Gamification system with levels and achievements
+  * Security vulnerability detection
+  * AI-powered refactoring suggestions
+  * Carbon footprint calculator
+  * Score history tracking
+  * LinkedIn sharing capabilities
 ```
 
 ## User Preferences

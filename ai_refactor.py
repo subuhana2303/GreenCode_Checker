@@ -21,7 +21,7 @@ class AIRefactorEngine:
             }
         }
     
-    def generate_refactored_code(self, original_code: str, analysis_results: Dict) -> Dict[str, str]:
+    def generate_refactored_code(self, original_code: str, analysis_results: Dict) -> Dict[str, any]:
         """Generate refactored version of the code with improvements"""
         refactored_sections = {}
         
