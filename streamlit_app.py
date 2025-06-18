@@ -1,11 +1,17 @@
 import streamlit as st
 import ast
 import io
+import json
 from datetime import datetime
 from analyzer import CodeAnalyzer
 from suggestions import SuggestionEngine
 from report_generator import ReportGenerator
-from sample_code import SAMPLE_INEFFICIENT_CODE
+from sample_code import SAMPLE_INEFFICIENT_CODE, get_sample_code, get_all_sample_types
+from visualization import CodeVisualization
+from history_tracker import HistoryTracker
+from gamification import GamificationEngine
+from security_checker import SecurityChecker
+from ai_refactor import AIRefactorEngine
 
 def main():
     st.set_page_config(
@@ -32,19 +38,49 @@ def main():
     - 🛠️ Function usage patterns
     """)
     
+    # Initialize components
+    if 'history_tracker' not in st.session_state:
+        st.session_state.history_tracker = HistoryTracker()
+    if 'gamification' not in st.session_state:
+        st.session_state.gamification = GamificationEngine()
+    
     # Sidebar
     with st.sidebar:
         st.header("⚙️ Settings")
         username = st.text_input("Your Name (for report)", value="Developer")
         
         st.header("📋 Quick Actions")
-        if st.button("Load Sample Code"):
-            st.session_state.sample_loaded = True
+        sample_types = get_all_sample_types()
+        selected_sample = st.selectbox("Choose Sample Code:", [""] + sample_types)
+        if st.button("Load Sample Code") and selected_sample:
+            st.session_state.sample_loaded = selected_sample
+        
+        # User Level and Stats
+        if username != "Developer":
+            user_stats = st.session_state.history_tracker.get_user_stats(username)
+            if user_stats['total_analyses'] > 0:
+                level_info = st.session_state.gamification.calculate_user_level(user_stats)
+                
+                st.header("🏆 Your Progress")
+                st.write(f"**Level:** {level_info['level_name']}")
+                st.write(f"**Best Score:** {user_stats['best_score']}/100")
+                st.write(f"**Analyses:** {user_stats['total_analyses']}")
+                
+                if level_info['next_level']:
+                    progress_bar = st.progress(level_info['progress_to_next'] / 100)
+                    st.write(f"Progress to {level_info['next_level_name']}: {level_info['progress_to_next']:.0f}%")
         
         st.header("ℹ️ About")
         st.markdown("""
         This tool promotes **Green AI** and **eco-conscious coding** practices. 
         Perfect for students, open-source projects, and portfolios!
+        
+        **New Features:**
+        - 📊 Interactive dashboards
+        - 🏆 Achievement system
+        - 📈 Score tracking
+        - 🔒 Security analysis
+        - ⚡ AI-powered refactoring
         """)
     
     # Main content area
@@ -56,7 +92,11 @@ def main():
         # Load sample code if requested
         default_code = ""
         if st.session_state.get('sample_loaded', False):
-            default_code = SAMPLE_INEFFICIENT_CODE
+            sample_type = st.session_state.sample_loaded
+            if sample_type == True:  # Backward compatibility
+                default_code = SAMPLE_INEFFICIENT_CODE
+            else:
+                default_code = get_sample_code(sample_type)
             st.session_state.sample_loaded = False
         
         code_input = st.text_area(
@@ -79,15 +119,31 @@ def main():
                 # Initialize components
                 analyzer = CodeAnalyzer()
                 suggestion_engine = SuggestionEngine()
+                visualizer = CodeVisualization()
+                security_checker = SecurityChecker()
+                ai_refactor = AIRefactorEngine()
                 
                 # Analyze code
                 with st.spinner("Analyzing your code..."):
                     analysis_results = analyzer.analyze(code_input)
                     suggestions = suggestion_engine.generate_suggestions(analysis_results)
                     green_score = analyzer.calculate_green_score(analysis_results)
+                    security_analysis = security_checker.analyze_security(code_input)
                 
-                # Display results
-                display_results(analysis_results, suggestions, green_score)
+                # Store in history
+                st.session_state.history_tracker.add_analysis(
+                    username, green_score, analysis_results, code_input[:100]
+                )
+                
+                # Display results with enhanced visualizations
+                display_enhanced_results(analysis_results, suggestions, green_score, 
+                                       security_analysis, visualizer, username)
+                
+                # Show AI refactoring suggestions
+                if st.button("🤖 Generate AI Refactor Suggestions", use_container_width=True):
+                    with st.spinner("Generating optimized code..."):
+                        refactor_results = ai_refactor.generate_refactored_code(code_input, analysis_results)
+                        display_refactor_suggestions(refactor_results)
                 
                 # Generate and offer report download
                 report_generator = ReportGenerator()
@@ -95,13 +151,23 @@ def main():
                     username, code_input, analysis_results, suggestions, green_score
                 )
                 
-                st.download_button(
-                    label="📄 Download Report",
-                    data=report_content,
-                    file_name=f"green_code_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
-                    mime="text/plain",
-                    use_container_width=True
-                )
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.download_button(
+                        label="📄 Download Report",
+                        data=report_content,
+                        file_name=f"green_code_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                        mime="text/plain",
+                        use_container_width=True
+                    )
+                
+                with col2:
+                    # LinkedIn sharing feature
+                    if st.button("🔗 Share on LinkedIn", use_container_width=True):
+                        user_stats = st.session_state.history_tracker.get_user_stats(username)
+                        level_info = st.session_state.gamification.calculate_user_level(user_stats)
+                        badge_text = st.session_state.gamification.get_level_badge_text(level_info, user_stats)
+                        st.text_area("Copy this text to share on LinkedIn:", badge_text, height=200)
                 
             except SyntaxError as e:
                 st.error(f"❌ **Syntax Error:** {str(e)}")
@@ -113,48 +179,170 @@ def main():
         elif analyze_button:
             st.warning("⚠️ Please enter some Python code to analyze.")
 
-def display_results(analysis_results, suggestions, green_score):
-    """Display the analysis results in a structured format"""
+def display_enhanced_results(analysis_results, suggestions, green_score, security_analysis, visualizer, username):
+    """Display enhanced analysis results with visualizations and gamification"""
     
-    # Green Score
-    score_color = "green" if green_score >= 70 else "orange" if green_score >= 40 else "red"
-    st.markdown(f"""
-    <div style="text-align: center; padding: 20px; border-radius: 10px; background-color: #f0f2f6;">
-        <h2 style="color: {score_color};">🌿 Green Score: {green_score}/100</h2>
-    </div>
-    """, unsafe_allow_html=True)
+    # Create tabs for different views
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Dashboard", "🔍 Details", "🔒 Security", "🏆 Achievements", "📈 History"])
     
-    st.markdown("---")
+    with tab1:
+        # Green Score Gauge
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            gauge_fig = visualizer.create_green_score_gauge(green_score)
+            st.plotly_chart(gauge_fig, use_container_width=True)
+        
+        with col2:
+            # Environmental Impact
+            visualizer.display_environmental_impact(analysis_results, green_score)
+        
+        # Charts
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            stats_chart = visualizer.create_code_stats_chart(analysis_results)
+            st.plotly_chart(stats_chart, use_container_width=True)
+        
+        with col2:
+            issues_chart = visualizer.create_issues_pie_chart(analysis_results)
+            st.plotly_chart(issues_chart, use_container_width=True)
+        
+        # Complexity Radar
+        complexity_radar = visualizer.create_complexity_radar(analysis_results)
+        st.plotly_chart(complexity_radar, use_container_width=True)
     
-    # Analysis Details
+    with tab2:
+        # Detailed Issues
+        if analysis_results.get('issues'):
+            st.subheader("🔍 Detailed Issues")
+            for i, issue in enumerate(analysis_results['issues'], 1):
+                with st.expander(f"Issue {i}: {issue['type'].replace('_', ' ').title()}"):
+                    st.write(f"**Line {issue['line']}:** {issue['description']}")
+                    if issue.get('suggestion'):
+                        st.info(f"💡 **Suggestion:** {issue['suggestion']}")
+        
+        # Suggestions
+        if suggestions:
+            st.subheader("💡 Optimization Suggestions")
+            for i, suggestion in enumerate(suggestions, 1):
+                st.write(f"{i}. {suggestion}")
+    
+    with tab3:
+        # Security Analysis
+        st.subheader(f"🔒 Security Analysis - Risk Level: {security_analysis['risk_level']}")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Security Score", f"{security_analysis['security_score']}/100")
+        with col2:
+            st.metric("High Risk Issues", security_analysis['high_risk_count'])
+        with col3:
+            st.metric("Total Vulnerabilities", security_analysis['total_vulnerabilities'])
+        
+        if security_analysis['security_issues']:
+            st.subheader("🚨 Security Issues Found")
+            for issue in security_analysis['security_issues']:
+                severity_color = "🔴" if issue['severity'] == 'HIGH' else "🟡" if issue['severity'] == 'MEDIUM' else "🟢"
+                with st.expander(f"{severity_color} {issue['severity']} - Line {issue['line']}"):
+                    st.write(f"**Issue:** {issue['description']}")
+                    st.info(f"**Recommendation:** {issue['suggestion']}")
+        
+        # Security recommendations
+        st.subheader("🛡️ Security Best Practices")
+        security_recs = security_analysis.get('recommendations', [])
+        for rec in security_recs:
+            st.write(f"• {rec}")
+    
+    with tab4:
+        # Gamification and Achievements
+        user_stats = st.session_state.history_tracker.get_user_stats(username)
+        level_info = st.session_state.gamification.calculate_user_level(user_stats)
+        
+        st.subheader(f"🏆 {level_info['level_name']}")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Current Level", level_info['current_level'])
+            st.metric("Best Score", user_stats['best_score'])
+            st.metric("Total Analyses", user_stats['total_analyses'])
+        
+        with col2:
+            if level_info['next_level']:
+                st.write(f"**Next Level:** {level_info['next_level_name']}")
+                progress = level_info['progress_to_next']
+                st.progress(progress / 100)
+                st.write(f"Progress: {progress:.0f}%")
+        
+        # Achievements
+        user_history = st.session_state.history_tracker.get_history(username)
+        achievements = st.session_state.gamification.check_achievements(user_history, user_stats)
+        
+        if achievements:
+            st.subheader("🎖️ Unlocked Achievements")
+            for achievement in achievements:
+                st.success(f"{achievement['icon']} **{achievement['name']}** - {achievement['description']}")
+        
+        # Next steps
+        next_steps = st.session_state.gamification.generate_next_steps(level_info, user_stats)
+        st.subheader("🎯 Next Steps")
+        for step in next_steps:
+            st.write(f"• {step}")
+    
+    with tab5:
+        # History and Progress
+        user_history = st.session_state.history_tracker.get_history(username)
+        
+        if user_history:
+            # Score history chart
+            history_chart = visualizer.create_score_history_chart(user_history)
+            st.plotly_chart(history_chart, use_container_width=True)
+            
+            # Recent analyses table
+            st.subheader("📋 Recent Analyses")
+            for i, entry in enumerate(user_history[-5:], 1):
+                with st.expander(f"Analysis {len(user_history) - 5 + i} - Score: {entry['green_score']}/100"):
+                    st.write(f"**Date:** {entry['timestamp'][:19]}")
+                    st.write(f"**Lines of Code:** {entry['lines_of_code']}")
+                    st.write(f"**Issues Found:** {entry['issues_count']}")
+                    if entry.get('code_preview'):
+                        st.code(entry['code_preview'])
+        else:
+            st.info("No analysis history yet. Complete more analyses to see your progress!")
+
+def display_refactor_suggestions(refactor_results):
+    """Display AI-generated refactoring suggestions"""
+    st.subheader("🤖 AI Refactoring Suggestions")
+    
+    # Improvement summary
+    improvements = refactor_results.get('improvement_summary', [])
+    if improvements:
+        st.success("**Improvements Applied:**")
+        for improvement in improvements:
+            st.write(f"✅ {improvement}")
+    
+    # Before/After comparison
+    st.subheader("📝 Optimized Code")
+    
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("📈 Code Statistics")
-        st.metric("Lines of Code", analysis_results.get('lines_of_code', 0))
-        st.metric("Functions Found", analysis_results.get('function_count', 0))
-        st.metric("Imports Found", analysis_results.get('import_count', 0))
+        st.write("**Before (Issues Highlighted):**")
+        # Note: In a real implementation, you'd show the original code with issues highlighted
+        st.info("Original code with inefficient patterns marked")
     
     with col2:
-        st.subheader("⚠️ Issues Found")
-        st.metric("While Loops", analysis_results.get('while_loop_count', 0))
-        st.metric("Unused Imports", analysis_results.get('unused_imports_count', 0))
-        st.metric("Inefficient Patterns", analysis_results.get('inefficient_patterns_count', 0))
+        st.write("**After (Optimized):**")
+        optimized_code = refactor_results.get('optimized_full_code', 'No optimizations available')
+        st.code(optimized_code, language='python')
     
-    # Detailed Issues
-    if analysis_results.get('issues'):
-        st.subheader("🔍 Detailed Issues")
-        for i, issue in enumerate(analysis_results['issues'], 1):
-            with st.expander(f"Issue {i}: {issue['type']}"):
-                st.write(f"**Line {issue['line']}:** {issue['description']}")
-                if issue.get('suggestion'):
-                    st.info(f"💡 **Suggestion:** {issue['suggestion']}")
-    
-    # Suggestions
-    if suggestions:
-        st.subheader("💡 Optimization Suggestions")
-        for i, suggestion in enumerate(suggestions, 1):
-            st.write(f"{i}. {suggestion}")
+    # Specific improvements
+    specific_improvements = refactor_results.get('specific_improvements', {})
+    if specific_improvements:
+        st.subheader("🔧 Specific Optimizations")
+        for improvement_id, suggestion in specific_improvements.items():
+            with st.expander(f"Optimization: {improvement_id.replace('_', ' ').title()}"):
+                st.code(suggestion, language='python')
 
 if __name__ == "__main__":
     main()
