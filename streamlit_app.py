@@ -252,7 +252,8 @@ def display_enhanced_results(analysis_results, suggestions, green_score, securit
         
         # Security recommendations
         st.subheader("🛡️ Security Best Practices")
-        security_recs = security_checker.get_security_recommendations(security_analysis)
+        checker = SecurityChecker()
+        security_recs = checker.get_security_recommendations(security_analysis)
         for rec in security_recs:
             st.write(f"• {rec}")
     
