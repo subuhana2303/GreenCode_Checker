@@ -63,18 +63,21 @@ def main():
         
         # User Level and Stats
         if username != "Developer":
-            user_stats = st.session_state.history_tracker.get_user_stats(username)
-            if user_stats.get('total_analyses', 0) > 0:
-                level_info = st.session_state.gamification.calculate_user_level(user_stats)
-                
-                st.header("🏆 Your Progress")
-                st.write(f"**Level:** {level_info['level_name']}")
-                st.write(f"**Best Score:** {user_stats['best_score']}/100")
-                st.write(f"**Analyses:** {user_stats['total_analyses']}")
-                
-                if level_info['next_level']:
-                    progress_bar = st.progress(level_info['progress_to_next'] / 100)
-                    st.write(f"Progress to {level_info['next_level_name']}: {level_info['progress_to_next']:.0f}%")
+            try:
+                user_stats = st.session_state.history_tracker.get_user_stats(username)
+                if user_stats and user_stats.get('total_analyses', 0) > 0:
+                    level_info = st.session_state.gamification.calculate_user_level(user_stats)
+                    
+                    st.header("🏆 Your Progress")
+                    st.write(f"**Level:** {level_info['level_name']}")
+                    st.write(f"**Best Score:** {user_stats['best_score']}/100")
+                    st.write(f"**Analyses:** {user_stats['total_analyses']}")
+                    
+                    if level_info['next_level']:
+                        progress_bar = st.progress(level_info['progress_to_next'] / 100)
+                        st.write(f"Progress to {level_info['next_level_name']}: {level_info['progress_to_next']:.0f}%")
+            except Exception:
+                st.info("Complete an analysis to see your progress!")
         
         # Global Leaderboard
         st.header("🥇 Leaderboard")

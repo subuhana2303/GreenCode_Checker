@@ -280,8 +280,11 @@ class DatabaseManager:
                     
                     if len(recent_analyses) >= 5:
                         recent_avg = sum(a.green_score for a in recent_analyses[:5]) / 5
-                        older_avg = sum(a.green_score for a in recent_analyses[5:]) / len(recent_analyses[5:])
+                        older_section = recent_analyses[5:]
+                        older_avg = sum(a.green_score for a in older_section) / len(older_section) if len(older_section) > 0 else 0
                         improvement_trend = recent_avg - older_avg
+                    else:
+                        improvement_trend = 0.0
                 
                 return {
                     'total_analyses': user.total_analyses,
