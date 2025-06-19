@@ -15,18 +15,9 @@ from ai_refactor import AIRefactorEngine
 from carbon_calculator import CarbonCalculator
 import plotly.graph_objects as go
 
-# Handle pandas and plotly express imports
-try:
-    import pandas as pd
-    PANDAS_AVAILABLE = True
-except ImportError:
-    PANDAS_AVAILABLE = False
-
-try:
-    import plotly.express as px
-    PLOTLY_EXPRESS_AVAILABLE = True
-except ImportError:
-    PLOTLY_EXPRESS_AVAILABLE = False
+# Disable complex dependencies to avoid numpy issues
+PANDAS_AVAILABLE = False
+PLOTLY_EXPRESS_AVAILABLE = False
 
 def main():
     st.set_page_config(

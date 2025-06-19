@@ -2,18 +2,9 @@ import plotly.graph_objects as go
 import streamlit as st
 from typing import Dict, Any, List
 
-# Avoid pandas/numpy dependencies for now
-try:
-    import pandas as pd
-    PANDAS_AVAILABLE = True
-except ImportError:
-    PANDAS_AVAILABLE = False
-
-try:
-    import plotly.express as px
-    PLOTLY_EXPRESS_AVAILABLE = True
-except ImportError:
-    PLOTLY_EXPRESS_AVAILABLE = False
+# Simple data handling without complex dependencies
+PANDAS_AVAILABLE = False
+PLOTLY_EXPRESS_AVAILABLE = False
 
 class CodeVisualization:
     """Generates interactive charts and visualizations for code analysis"""
