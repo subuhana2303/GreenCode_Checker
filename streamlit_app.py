@@ -13,6 +13,8 @@ from gamification import GamificationEngine
 from security_checker import SecurityChecker
 from ai_refactor import AIRefactorEngine
 from carbon_calculator import CarbonCalculator
+import pandas as pd
+import plotly.express as px
 
 def main():
     st.set_page_config(
@@ -200,7 +202,7 @@ def display_enhanced_results(analysis_results, suggestions, green_score, securit
     """Display enhanced analysis results with visualizations and gamification"""
     
     # Create tabs for different views
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 Dashboard", "🔍 Details", "🔒 Security", "🏆 Achievements", "📈 History", "🌍 Carbon Impact"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["📊 Dashboard", "🔍 Details", "🔒 Security", "🏆 Achievements", "📈 History", "🌍 Carbon Impact", "🗃️ Database"])
     
     with tab1:
         # Green Score Gauge
@@ -377,6 +379,89 @@ def display_enhanced_results(analysis_results, suggestions, green_score, securit
         if st.button("📄 Generate Carbon Report"):
             carbon_report = carbon_calc.generate_carbon_report(analysis_results)
             st.text_area("Carbon Footprint Report", carbon_report, height=300)
+    
+    with tab7:
+        # Database Analytics and Management
+        st.subheader("🗃️ Database Analytics")
+        
+        # Check if database is available
+        if st.session_state.history_tracker.use_database and st.session_state.history_tracker.db_manager:
+            st.success("Database connection active")
+            
+            # Platform statistics
+            try:
+                analytics = st.session_state.history_tracker.db_manager.get_analytics_summary()
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Total Users", analytics.get('total_users', 0))
+                with col2:
+                    st.metric("Total Analyses", analytics.get('total_analyses', 0))
+                with col3:
+                    st.metric("Platform Avg Score", f"{analytics.get('average_platform_score', 0):.1f}/100")
+                
+                # Global leaderboard
+                st.subheader("🏆 Global Leaderboard")
+                leaderboard = st.session_state.history_tracker.get_leaderboard(10)
+                if leaderboard:
+                    leaderboard_df = pd.DataFrame(leaderboard)
+                    st.dataframe(leaderboard_df[['username', 'average_score', 'best_score', 'total_analyses']], 
+                               column_config={
+                                   'username': 'User',
+                                   'average_score': st.column_config.NumberColumn('Avg Score', format="%.1f"),
+                                   'best_score': 'Best Score',
+                                   'total_analyses': 'Analyses'
+                               })
+                
+                # User analytics (if logged in as non-default user)
+                if username != "Developer":
+                    st.subheader(f"📊 Your Analytics - {username}")
+                    user_history = st.session_state.history_tracker.get_history(username)
+                    
+                    if user_history:
+                        # Create analytics charts
+                        history_df = pd.DataFrame(user_history)
+                        history_df['timestamp'] = pd.to_datetime(history_df['timestamp'])
+                        
+                        # Score trend over time
+                        fig = px.line(history_df, x='timestamp', y='green_score', 
+                                    title='Your Green Score Progress',
+                                    labels={'green_score': 'Green Score', 'timestamp': 'Date'})
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Performance metrics
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            # Issues over time
+                            fig2 = px.bar(history_df.tail(10), x='timestamp', y='issues_count',
+                                        title='Issues Count (Last 10 Analyses)')
+                            st.plotly_chart(fig2, use_container_width=True)
+                        
+                        with col2:
+                            # Code complexity trend
+                            fig3 = px.scatter(history_df, x='lines_of_code', y='green_score',
+                                            size='complexity_score', 
+                                            title='Score vs Code Complexity',
+                                            labels={'lines_of_code': 'Lines of Code'})
+                            st.plotly_chart(fig3, use_container_width=True)
+                    else:
+                        st.info("No analysis history found for your account.")
+                
+            except Exception as e:
+                st.error(f"Error loading database analytics: {str(e)}")
+                
+        else:
+            st.warning("Database not available - using local file storage")
+            st.info("Database features include: persistent user profiles, global leaderboards, achievement tracking, and advanced analytics.")
+            
+            # Show what would be available with database
+            st.subheader("📈 Available with Database")
+            st.write("- Persistent user profiles across sessions")
+            st.write("- Global leaderboard with all users")
+            st.write("- Achievement system with unlock tracking")
+            st.write("- Advanced analytics and reporting")
+            st.write("- Data export capabilities")
+            st.write("- Multi-user collaboration features")
 
 def display_refactor_suggestions(refactor_results):
     """Display AI-generated refactoring suggestions"""

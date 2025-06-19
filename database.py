@@ -1,6 +1,6 @@
 import os
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float, Text, JSON, Boolean
 from sqlalchemy.ext.declarative import declarative_base
@@ -85,11 +85,13 @@ class DatabaseManager:
     def create_tables(self):
         """Create all database tables"""
         try:
-            Base.metadata.create_all(bind=self.engine)
+            Base.metadata.create_all(bind=self.engine, checkfirst=True)
             logger.info("Database tables created successfully")
         except SQLAlchemyError as e:
             logger.error(f"Error creating tables: {e}")
-            raise
+            # Don't raise for duplicate constraint errors - tables already exist
+            if "duplicate key value violates unique constraint" not in str(e):
+                raise
     
     def get_session(self) -> Session:
         """Get database session"""
