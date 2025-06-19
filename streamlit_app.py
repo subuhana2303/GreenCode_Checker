@@ -278,60 +278,143 @@ def display_enhanced_results(analysis_results, suggestions, green_score, securit
             st.write(f"• {rec}")
     
     with tab4:
-        # Gamification and Achievements
-        user_stats = st.session_state.history_tracker.get_user_stats(username)
-        level_info = st.session_state.gamification.calculate_user_level(user_stats)
+        # Gamification System
+        st.subheader("🏆 Achievements & Progress")
         
-        st.subheader(f"🏆 {level_info['level_name']}")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Current Level", level_info['current_level'])
-            st.metric("Best Score", user_stats['best_score'])
-            st.metric("Total Analyses", user_stats['total_analyses'])
-        
-        with col2:
-            if level_info['next_level']:
-                st.write(f"**Next Level:** {level_info['next_level_name']}")
-                progress = level_info['progress_to_next']
-                st.progress(progress / 100)
-                st.write(f"Progress: {progress:.0f}%")
-        
-        # Achievements
-        user_history = st.session_state.history_tracker.get_history(username)
-        achievements = st.session_state.gamification.check_achievements(user_history, user_stats)
-        
-        if achievements:
-            st.subheader("🎖️ Unlocked Achievements")
-            for achievement in achievements:
-                st.success(f"{achievement['icon']} **{achievement['name']}** - {achievement['description']}")
-        
-        # Next steps
-        next_steps = st.session_state.gamification.generate_next_steps(level_info, user_stats)
-        st.subheader("🎯 Next Steps")
-        for step in next_steps:
-            st.write(f"• {step}")
+        try:
+            user_stats = st.session_state.history_tracker.get_user_stats(username)
+            
+            if user_stats and user_stats.get('total_analyses', 0) > 0:
+                gamification = GamificationEngine()
+                level_info = gamification.calculate_user_level(user_stats)
+                
+                # Level Progress
+                col1, col2 = st.columns([2, 1])
+                
+                with col1:
+                    st.write(f"### Level {level_info['current_level']}: {level_info['level_name']}")
+                    progress = level_info['progress_to_next'] / 100.0
+                    st.progress(progress, text=f"Progress to next level: {level_info['progress_to_next']:.1f}%")
+                    
+                    if level_info['current_level'] < 6:
+                        st.write(f"**Next Level:** {level_info['next_level_name']} (Need {level_info['points_to_next']} more points)")
+                    else:
+                        st.write("Maximum Level Achieved!")
+                
+                with col2:
+                    st.write(f"## 🏅")
+                    st.write(f"**{level_info['level_name']}**")
+                
+                # User Statistics
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric("Total Analyses", user_stats.get('total_analyses', 0))
+                with col2:
+                    st.metric("Best Score", f"{user_stats.get('best_score', 0)}/100")
+                with col3:
+                    st.metric("Average Score", f"{user_stats.get('average_score', 0):.1f}/100")
+                
+                # Achievement System
+                user_history = st.session_state.history_tracker.get_history(username)
+                achievements = gamification.check_achievements(user_history, user_stats)
+                
+                if achievements:
+                    st.subheader("🏆 Unlocked Achievements")
+                    for achievement in achievements:
+                        with st.expander(f"🏅 {achievement['name']}"):
+                            st.write(achievement['description'])
+                            if achievement.get('unlocked_date'):
+                                st.caption(f"Unlocked: {achievement['unlocked_date']}")
+                
+                # LinkedIn Sharing
+                st.subheader("📱 Share Your Achievement")
+                badge_text = gamification.get_level_badge_text(level_info, user_stats)
+                
+                # URL encode the badge text for LinkedIn sharing
+                encoded_summary = badge_text.replace(' ', '%20').replace('\n', '%0A')
+                linkedin_url = f"https://www.linkedin.com/sharing/share-offsite/?url=https://replit.com&title=Green%20Code%20Achievement&summary={encoded_summary}"
+                
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    st.link_button("📱 Share on LinkedIn", linkedin_url)
+                with col2:
+                    if st.button("📋 Copy Badge Text"):
+                        st.code(badge_text, language=None)
+            
+            else:
+                st.info("Complete your first analysis to start earning achievements!")
+                st.subheader("🎯 Available Achievements")
+                st.write("- **First Steps**: Complete your first code analysis")
+                st.write("- **Improving**: Achieve a score of 80 or higher")
+                st.write("- **Green Champion**: Achieve a perfect score of 100")
+                st.write("- **Consistency**: Complete analyses 5 days in a row")
+                
+        except Exception as e:
+            st.error("Achievement system temporarily unavailable")
+            st.info("Complete an analysis to unlock the achievement system.")
     
     with tab5:
-        # History and Progress
-        user_history = st.session_state.history_tracker.get_history(username)
+        # History and Analytics
+        st.subheader("📈 Analysis History")
         
-        if user_history:
-            # Score history chart
-            history_chart = visualizer.create_score_history_chart(user_history)
-            st.plotly_chart(history_chart, use_container_width=True)
+        try:
+            user_history = st.session_state.history_tracker.get_history(username)
             
-            # Recent analyses table
-            st.subheader("📋 Recent Analyses")
-            for i, entry in enumerate(user_history[-5:], 1):
-                with st.expander(f"Analysis {len(user_history) - 5 + i} - Score: {entry['green_score']}/100"):
-                    st.write(f"**Date:** {entry['timestamp'][:19]}")
-                    st.write(f"**Lines of Code:** {entry['lines_of_code']}")
-                    st.write(f"**Issues Found:** {entry['issues_count']}")
-                    if entry.get('code_preview'):
-                        st.code(entry['code_preview'])
-        else:
-            st.info("No analysis history yet. Complete more analyses to see your progress!")
+            if user_history and len(user_history) > 0:
+                # Create history chart
+                history_chart = visualizer.create_score_history_chart(user_history)
+                st.plotly_chart(history_chart, use_container_width=True)
+                
+                # Recent analyses table
+                st.subheader("📊 Recent Analyses")
+                recent_analyses = user_history[-10:]
+                
+                for i, analysis in enumerate(reversed(recent_analyses), 1):
+                    timestamp_str = str(analysis.get('timestamp', 'Unknown'))[:19]
+                    with st.expander(f"Analysis {len(recent_analyses) - i + 1}: Score {analysis['green_score']}/100 - {timestamp_str}"):
+                        col1, col2, col3 = st.columns(3)
+                        
+                        with col1:
+                            st.write(f"**Score:** {analysis['green_score']}/100")
+                            st.write(f"**Lines:** {analysis.get('lines_of_code', 'N/A')}")
+                        
+                        with col2:
+                            st.write(f"**Issues:** {analysis.get('issues_count', 'N/A')}")
+                            st.write(f"**Functions:** {analysis.get('function_count', 'N/A')}")
+                        
+                        with col3:
+                            st.write(f"**Complexity:** {analysis.get('complexity_score', 'N/A')}")
+                            st.write(f"**Security:** {analysis.get('security_score', 100)}/100")
+                        
+                        if analysis.get('code_preview'):
+                            preview = str(analysis['code_preview'])
+                            st.code(preview[:200] + "..." if len(preview) > 200 else preview, language='python')
+                
+                # Export functionality
+                if st.button("📥 Export History as CSV"):
+                    try:
+                        csv_data = st.session_state.history_tracker.export_history(username)
+                        st.download_button(
+                            label="Download CSV",
+                            data=csv_data,
+                            file_name=f"{username}_green_code_history.csv",
+                            mime="text/csv"
+                        )
+                    except Exception as e:
+                        st.error("Export temporarily unavailable")
+            
+            else:
+                st.info("No analysis history available yet. Complete some code analyses to see your progress here!")
+                st.subheader("📊 What you'll see here:")
+                st.write("- Interactive chart showing your score progression over time")
+                st.write("- Detailed history of all your code analyses")
+                st.write("- Ability to export your data as CSV")
+                st.write("- Code snippets from previous analyses")
+                
+        except Exception as e:
+            st.error("History system temporarily unavailable")
+            st.info("Complete an analysis to start building your history.")
     
     with tab6:
         # Carbon Impact Analysis
@@ -352,17 +435,19 @@ def display_enhanced_results(analysis_results, suggestions, green_score, securit
         
         # Energy breakdown chart
         if energy_data['energy_breakdown']:
-            import plotly.express as px
-            import pandas as pd
-            
-            breakdown_df = pd.DataFrame([
-                {'Category': k, 'Energy (μJ)': v} 
+            breakdown_data = [
+                {'Category': k, 'Energy': v} 
                 for k, v in energy_data['energy_breakdown'].items() if v > 0
-            ])
+            ]
             
-            if not breakdown_df.empty:
-                fig = px.pie(breakdown_df, values='Energy (μJ)', names='Category', 
-                           title="Energy Consumption Breakdown")
+            if breakdown_data:
+                # Simple pie chart using graph objects only
+                fig = go.Figure(data=[go.Pie(
+                    labels=[item['Category'] for item in breakdown_data],
+                    values=[item['Energy'] for item in breakdown_data],
+                    title="Energy Consumption Breakdown"
+                )])
+                fig.update_layout(title="Energy Consumption Breakdown")
                 st.plotly_chart(fig, use_container_width=True)
         
         # Environmental equivalents
@@ -407,19 +492,17 @@ def display_enhanced_results(analysis_results, suggestions, green_score, securit
                 st.subheader("🏆 Global Leaderboard")
                 leaderboard = st.session_state.history_tracker.get_leaderboard(10)
                 if leaderboard:
-                    if PANDAS_AVAILABLE:
-                        leaderboard_df = pd.DataFrame(leaderboard)
-                        st.dataframe(leaderboard_df[['username', 'average_score', 'best_score', 'total_analyses']], 
-                                   column_config={
-                                       'username': 'User',
-                                       'average_score': st.column_config.NumberColumn('Avg Score', format="%.1f"),
-                                       'best_score': 'Best Score',
-                                       'total_analyses': 'Analyses'
-                                   })
-                    else:
-                        # Fallback table display
-                        for i, leader in enumerate(leaderboard, 1):
-                            st.write(f"{i}. **{leader['username']}** - Avg: {leader['average_score']:.1f}, Best: {leader['best_score']}, Analyses: {leader['total_analyses']}")
+                    # Create a simple table display
+                    st.write("| Rank | Username | Avg Score | Best Score | Total Analyses |")
+                    st.write("|------|----------|-----------|------------|----------------|")
+                    for i, leader in enumerate(leaderboard, 1):
+                        avg_score = leader.get('average_score', 0)
+                        best_score = leader.get('best_score', 0)
+                        total_analyses = leader.get('total_analyses', 0)
+                        username = leader.get('username', 'Unknown')
+                        st.write(f"| {i} | {username} | {avg_score:.1f} | {best_score} | {total_analyses} |")
+                else:
+                    st.info("No leaderboard data available yet.")
                 
                 # User analytics (if logged in as non-default user)
                 if username != "Developer":
