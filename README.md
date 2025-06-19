@@ -20,11 +20,11 @@ A comprehensive Python code analyzer that evaluates code for sustainability, eff
 
 ---
 
-## 🎥 Demo
+## 🎥All  Demo cases included:
 
 ▶️ [Watch Demo](https://drive.google.com/file/d/13RmLPfjQ0lXe3h6fbQI9l6x9AapQvmAJ/view?usp=drivesdk)
 
-## example output for High Carbon Cost Code (Heavy Looping)
+## Example Output for High Carbon Cost Code (Heavy Looping)
 ![2025-06-19 (1)](https://github.com/user-attachments/assets/cd71574d-b382-4a46-b4eb-32d84a7faac4)
 ![2025-06-19 (2)](https://github.com/user-attachments/assets/2b46bfe4-a91b-45f0-b012-7110ee5e38fa)
 ![2025-06-19 (4)](https://github.com/user-attachments/assets/946ac045-ad8d-4ebe-89c1-e6e9b7b0bfbd)
