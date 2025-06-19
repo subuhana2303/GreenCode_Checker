@@ -7,31 +7,26 @@ A comprehensive Python code analyzer that evaluates code for sustainability, eff
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-## 🚀 Features
 
-### Core Analysis
-- **Green Score (0-100)**: Comprehensive sustainability rating for your Python code
-- **Security Analysis**: Detects vulnerabilities and security anti-patterns
-- **Performance Optimization**: Identifies inefficient coding patterns
-- **Carbon Footprint Calculation**: Estimates energy consumption and environmental impact
+## 🚀 Key Features
 
-### Advanced Features
-- **Interactive Dashboard**: Real-time visualizations with Plotly charts
-- **AI-Powered Refactoring**: Intelligent code optimization suggestions
-- **Gamification System**: User levels, achievements, and progress tracking
-- **Global Leaderboards**: Compare your coding efficiency with others
-- **LinkedIn Integration**: Share your achievements professionally
-- **History Tracking**: Monitor improvement over time
-- **Report Generation**: Download comprehensive analysis reports
+- ♻️ **Green Score** (0–100) based on code efficiency and sustainability
+- 🔒 **Security Analysis** (detects `eval`, `exec`, hardcoded credentials, injections)
+- 🧠 **AI-Powered Suggestions** for performance and optimization
+- 📊 **Interactive Dashboard** with real-time Plotly visualizations
+- 🌍 **Carbon Footprint Estimation** (energy, CO₂, real-world equivalents)
+- 🏆 **Gamification** with user levels, badges, and global leaderboard
+- 🧾 **Downloadable Reports** for professional insights and sharing
 
-### Multi-Tab Interface
-1. **Dashboard**: Overview with green score gauge and key metrics
-2. **Details**: In-depth analysis with specific issue breakdowns
-3. **Security**: Vulnerability detection and security recommendations
-4. **Achievements**: Gamification, levels, and sharing capabilities
-5. **History**: Score progression and analysis timeline
-6. **Carbon Impact**: Environmental footprint and efficiency ratings
-7. **Database**: Platform statistics and global leaderboards
+---
+
+## 🎥 Demo
+
+▶️ [Watch Demo](https://www.youtube.com/watch?v=your_demo_link)
+
+![Dashboard Preview](assets/dashboard_preview.png)
+
+---
 
 ## 📁 Project Structure
 
@@ -56,17 +51,12 @@ green-code-checker/
 
 ## 🏗️ Architecture
 
-### Frontend (Streamlit)
-- **Framework**: Streamlit for rapid web application development
-- **Layout**: Multi-tab interface with sidebar configuration
-- **Visualizations**: Interactive charts using Plotly
-- **User Experience**: Real-time analysis with progress indicators
-
-### Backend Components
-- **Analysis Engine**: AST-based Python code parsing and pattern detection
-- **Database Layer**: PostgreSQL for user data and analytics
-- **Security Module**: Pattern-based vulnerability detection
-- **Carbon Calculator**: Energy consumption and environmental impact modeling
+| Layer       | Tools/Frameworks                    |
+|-------------|-------------------------------------|
+| Frontend    | Streamlit, Plotly                   |
+| Backend     | Python (AST), AI logic, Refactoring |
+| Database    | PostgreSQL, SQLAlchemy              |
+| Analytics   | Custom carbon model + visual stats  |
 
 ### Data Flow
 1. **Input**: Python code via web interface
@@ -84,16 +74,6 @@ green-code-checker/
 - PostgreSQL database (provided by Replit)
 - Required packages (automatically installed)
 
-### Dependencies
-```python
-streamlit>=1.28.0
-plotly>=5.0.0
-pandas>=1.5.0
-numpy>=1.20.0
-psycopg2-binary>=2.9.0
-sqlalchemy>=2.0.0
-matplotlib>=3.5.0
-```
 
 ### Quick Start
 1. **Clone or access the project**
@@ -103,50 +83,6 @@ matplotlib>=3.5.0
    ```
 3. **Access the web interface** at `http://localhost:5000`
 
-## 📊 Usage Guide
-
-### Basic Analysis
-1. Enter your Python code in the main text area
-2. Click "Analyze Code" to get instant feedback
-3. Review your Green Score and detailed recommendations
-4. Explore different tabs for comprehensive insights
-
-### Advanced Features
-- **Sample Code**: Use the sidebar dropdown to load test examples
-- **User Profiles**: Enter a username to track progress over time
-- **AI Refactoring**: Click the AI suggestions button for optimization
-- **Achievement Tracking**: Complete analyses to unlock badges and levels
-- **LinkedIn Sharing**: Share your coding achievements professionally
-
-### Testing Examples
-
-#### Basic Inefficient Code
-```python
-import os
-import sys
-import unused_module
-
-def inefficient_function():
-    data = []
-    for i in range(len([1,2,3,4,5])):
-        data.append(i * 2)
-    
-    counter = 0
-    while counter < 10:
-        print(f"Count: {counter}")
-        counter += 1
-    
-    return data
-```
-
-#### Security Vulnerable Code
-```python
-import subprocess
-password = "hardcoded123"
-user_input = input("Enter command: ")
-subprocess.call(user_input, shell=True)
-eval("print('dangerous')")
-```
 
 ## 🏆 Scoring System
 
@@ -163,15 +99,7 @@ eval("print('dangerous')")
 - **30-49**: Below Average - Significant improvements needed
 - **0-29**: Poor - Major refactoring required
 
-## 🔒 Security Analysis
 
-The security checker detects:
-- Hardcoded credentials and secrets
-- Command injection vulnerabilities
-- Unsafe deserialization patterns
-- SQL injection risks
-- Path traversal vulnerabilities
-- Use of dangerous functions (eval, exec)
 
 ## 🌍 Environmental Impact
 
@@ -181,33 +109,6 @@ The security checker detects:
 - **Efficiency Ratings**: A+ to F scale classification
 - **Real-world Equivalents**: Smartphone charges, car miles, etc.
 
-## 🎯 Gamification System
-
-### User Levels
-1. **Eco Newbie** (0-99 points): Just starting your green coding journey
-2. **Code Gardener** (100-299 points): Growing your sustainable coding skills
-3. **Efficiency Expert** (300-599 points): Mastering optimization techniques
-4. **Green Guru** (600-999 points): Leading by example in eco-coding
-5. **Sustainability Champion** (1000+ points): Inspiring others to code green
-
-### Achievement Types
-- **Score-based**: Perfect scores, consistency achievements
-- **Analysis-based**: Frequency milestones, improvement tracking
-- **Special**: Security mastery, carbon reduction goals
-
-## 📈 Analytics & Tracking
-
-### Personal Analytics
-- Score progression over time
-- Improvement trends and patterns
-- Achievement unlock timeline
-- Carbon footprint reduction tracking
-
-### Global Statistics
-- Platform-wide usage metrics
-- Community leaderboards
-- Aggregate improvement trends
-- Environmental impact summaries
 
 ## 🚀 Deployment
 
@@ -218,32 +119,28 @@ This application is designed for deployment on Replit:
 3. **Hosting**: Autoscale deployment with public access
 4. **Configuration**: Streamlit server on port 5000
 
-### Production Considerations
-- Database connection pooling for scalability
-- Error handling and graceful degradation
-- User data privacy and security
-- Performance optimization for larger codebases
+## 🤝 Contribution Welcome!
+Contributions are welcome! Feel free to fork the repo and submit a pull request.
 
-## 🤝 Contributing
+**Let's build together 💚!**  
+Make sure to check our [guidelines](#guidelines) before you start.
 
-### Development Guidelines
-- Follow PEP 8 Python style guidelines
-- Add comprehensive docstrings and comments
-- Include unit tests for new features
-- Update documentation for API changes
+<details id="guidelines">
+  <summary>### Development Guidelines</summary>
 
+- Follow PEP 8 Python style guidelines  
+- Add comprehensive docstrings and comments  
+- Include unit tests for new features  
+- Update documentation for API changes  
+
+</details>
+
+ 
 ### Feature Requests
 - Environmental impact enhancements
 - Additional programming language support
 - Advanced AI optimization algorithms
 - Extended gamification mechanics
-
-## 📞 Support & Contact
-
-For questions, suggestions, or contributions:
-- Create an issue in the project repository
-- Reach out through Replit community forums
-- Share your achievements on LinkedIn using the built-in feature
 
 ## 📄 License
 
