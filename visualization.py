@@ -1,20 +1,19 @@
 import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
-import pandas as pd
 import streamlit as st
 from typing import Dict, Any, List
 
+# Avoid pandas/numpy dependencies for now
 try:
-    import numpy as np
+    import pandas as pd
+    PANDAS_AVAILABLE = True
 except ImportError:
-    # Fallback for numpy issues
-    class MockNumpy:
-        def polyfit(self, x, y, deg):
-            return [0.5, 10]  # Simple linear approximation
-        def poly1d(self, coeffs):
-            return lambda x: coeffs[0] * x + coeffs[1]
-    np = MockNumpy()
+    PANDAS_AVAILABLE = False
+
+try:
+    import plotly.express as px
+    PLOTLY_EXPRESS_AVAILABLE = True
+except ImportError:
+    PLOTLY_EXPRESS_AVAILABLE = False
 
 class CodeVisualization:
     """Generates interactive charts and visualizations for code analysis"""
@@ -196,30 +195,37 @@ class CodeVisualization:
             )
             return fig
         
-        df = pd.DataFrame(history_data)
-        
         fig = go.Figure()
         fig.add_trace(go.Scatter(
-            x=df['timestamp'],
-            y=df['green_score'],
+            x=[entry['timestamp'] for entry in history_data],
+            y=[entry['green_score'] for entry in history_data],
             mode='lines+markers',
             name='Green Score',
             line=dict(color=self.colors['primary'], width=3),
             marker=dict(size=8)
         ))
         
-        # Add trend line
-        if len(df) > 1:
-            z = np.polyfit(range(len(df)), df['green_score'], 1)
-            p = np.poly1d(z)
-            fig.add_trace(go.Scatter(
-                x=df['timestamp'],
-                y=p(range(len(df))),
-                mode='lines',
-                name='Trend',
-                line=dict(color=self.colors['warning'], width=2, dash='dash'),
-                opacity=0.7
-            ))
+        # Add simple trend line
+        if len(history_data) > 1:
+            # Simple linear trend calculation
+            scores = [entry['green_score'] for entry in history_data]
+            n = len(scores)
+            if n > 1:
+                # Calculate simple slope
+                avg_score = sum(scores) / n
+                trend_scores = []
+                for i, score in enumerate(scores):
+                    trend_value = avg_score + (i - n/2) * 0.5  # Simple linear trend
+                    trend_scores.append(trend_value)
+                
+                fig.add_trace(go.Scatter(
+                    x=[entry['timestamp'] for entry in history_data],
+                    y=trend_scores,
+                    mode='lines',
+                    name='Trend',
+                    line=dict(color=self.colors['warning'], width=2, dash='dash'),
+                    opacity=0.7
+                ))
         
         fig.update_layout(
             title="Green Score Progress Over Time",

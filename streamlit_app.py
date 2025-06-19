@@ -13,8 +13,20 @@ from gamification import GamificationEngine
 from security_checker import SecurityChecker
 from ai_refactor import AIRefactorEngine
 from carbon_calculator import CarbonCalculator
-import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
+
+# Handle pandas and plotly express imports
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+
+try:
+    import plotly.express as px
+    PLOTLY_EXPRESS_AVAILABLE = True
+except ImportError:
+    PLOTLY_EXPRESS_AVAILABLE = False
 
 def main():
     st.set_page_config(
@@ -404,14 +416,19 @@ def display_enhanced_results(analysis_results, suggestions, green_score, securit
                 st.subheader("🏆 Global Leaderboard")
                 leaderboard = st.session_state.history_tracker.get_leaderboard(10)
                 if leaderboard:
-                    leaderboard_df = pd.DataFrame(leaderboard)
-                    st.dataframe(leaderboard_df[['username', 'average_score', 'best_score', 'total_analyses']], 
-                               column_config={
-                                   'username': 'User',
-                                   'average_score': st.column_config.NumberColumn('Avg Score', format="%.1f"),
-                                   'best_score': 'Best Score',
-                                   'total_analyses': 'Analyses'
-                               })
+                    if PANDAS_AVAILABLE:
+                        leaderboard_df = pd.DataFrame(leaderboard)
+                        st.dataframe(leaderboard_df[['username', 'average_score', 'best_score', 'total_analyses']], 
+                                   column_config={
+                                       'username': 'User',
+                                       'average_score': st.column_config.NumberColumn('Avg Score', format="%.1f"),
+                                       'best_score': 'Best Score',
+                                       'total_analyses': 'Analyses'
+                                   })
+                    else:
+                        # Fallback table display
+                        for i, leader in enumerate(leaderboard, 1):
+                            st.write(f"{i}. **{leader['username']}** - Avg: {leader['average_score']:.1f}, Best: {leader['best_score']}, Analyses: {leader['total_analyses']}")
                 
                 # User analytics (if logged in as non-default user)
                 if username != "Developer":
@@ -419,31 +436,69 @@ def display_enhanced_results(analysis_results, suggestions, green_score, securit
                     user_history = st.session_state.history_tracker.get_history(username)
                     
                     if user_history:
-                        # Create analytics charts
-                        history_df = pd.DataFrame(user_history)
-                        history_df['timestamp'] = pd.to_datetime(history_df['timestamp'])
-                        
-                        # Score trend over time
-                        fig = px.line(history_df, x='timestamp', y='green_score', 
-                                    title='Your Green Score Progress',
-                                    labels={'green_score': 'Green Score', 'timestamp': 'Date'})
-                        st.plotly_chart(fig, use_container_width=True)
-                        
-                        # Performance metrics
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            # Issues over time
-                            fig2 = px.bar(history_df.tail(10), x='timestamp', y='issues_count',
-                                        title='Issues Count (Last 10 Analyses)')
-                            st.plotly_chart(fig2, use_container_width=True)
-                        
-                        with col2:
-                            # Code complexity trend
-                            fig3 = px.scatter(history_df, x='lines_of_code', y='green_score',
-                                            size='complexity_score', 
-                                            title='Score vs Code Complexity',
-                                            labels={'lines_of_code': 'Lines of Code'})
-                            st.plotly_chart(fig3, use_container_width=True)
+                        if PANDAS_AVAILABLE:
+                            # Create analytics charts with pandas
+                            history_df = pd.DataFrame(user_history)
+                            history_df['timestamp'] = pd.to_datetime(history_df['timestamp'])
+                            
+                            # Score trend over time
+                            if PLOTLY_EXPRESS_AVAILABLE:
+                                fig = px.line(history_df, x='timestamp', y='green_score', 
+                                            title='Your Green Score Progress',
+                                            labels={'green_score': 'Green Score', 'timestamp': 'Date'})
+                            else:
+                                fig = go.Figure()
+                                fig.add_trace(go.Scatter(
+                                    x=history_df['timestamp'],
+                                    y=history_df['green_score'],
+                                    mode='lines+markers',
+                                    name='Green Score'
+                                ))
+                                fig.update_layout(title='Your Green Score Progress')
+                            st.plotly_chart(fig, use_container_width=True)
+                            
+                            # Performance metrics
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                # Issues over time
+                                recent_data = history_df.tail(10)
+                                if PLOTLY_EXPRESS_AVAILABLE:
+                                    fig2 = px.bar(recent_data, x='timestamp', y='issues_count',
+                                                title='Issues Count (Last 10 Analyses)')
+                                else:
+                                    fig2 = go.Figure()
+                                    fig2.add_trace(go.Bar(
+                                        x=recent_data['timestamp'],
+                                        y=recent_data['issues_count'],
+                                        name='Issues Count'
+                                    ))
+                                    fig2.update_layout(title='Issues Count (Last 10 Analyses)')
+                                st.plotly_chart(fig2, use_container_width=True)
+                            
+                            with col2:
+                                # Code complexity trend
+                                if PLOTLY_EXPRESS_AVAILABLE:
+                                    fig3 = px.scatter(history_df, x='lines_of_code', y='green_score',
+                                                    size='complexity_score', 
+                                                    title='Score vs Code Complexity',
+                                                    labels={'lines_of_code': 'Lines of Code'})
+                                else:
+                                    fig3 = go.Figure()
+                                    fig3.add_trace(go.Scatter(
+                                        x=history_df['lines_of_code'],
+                                        y=history_df['green_score'],
+                                        mode='markers',
+                                        marker=dict(size=[entry['complexity_score'] for entry in user_history]),
+                                        name='Complexity'
+                                    ))
+                                    fig3.update_layout(title='Score vs Code Complexity')
+                                st.plotly_chart(fig3, use_container_width=True)
+                        else:
+                            # Simple fallback without pandas
+                            st.write("Analytics charts require pandas. Showing basic statistics:")
+                            scores = [entry['green_score'] for entry in user_history]
+                            st.metric("Average Score", f"{sum(scores)/len(scores):.1f}")
+                            st.metric("Recent Analyses", len(user_history[-5:]))
                     else:
                         st.info("No analysis history found for your account.")
                 
