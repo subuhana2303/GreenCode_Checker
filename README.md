@@ -126,7 +126,7 @@ Contributions are welcome! Feel free to fork the repo and submit a pull request.
 Make sure to check our [guidelines](#guidelines) before you start.
 
 <details id="guidelines">
-  <summary>### Development Guidelines</summary>
+  <summary>Development Guidelines</summary>
 
 - Follow PEP 8 Python style guidelines  
 - Add comprehensive docstrings and comments  
