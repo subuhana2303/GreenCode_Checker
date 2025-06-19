@@ -337,10 +337,14 @@ def display_enhanced_results(analysis_results, suggestions, green_score, securit
                 
                 col1, col2 = st.columns([1, 1])
                 with col1:
-                    st.link_button("📱 Share on LinkedIn", linkedin_url)
+                    if st.button("📱 Share on LinkedIn"):
+                        st.success("LinkedIn sharing link generated!")
+                        st.write("Click the link below to share your achievement:")
+                        st.markdown(f"[Share on LinkedIn]({linkedin_url})")
                 with col2:
                     if st.button("📋 Copy Badge Text"):
                         st.code(badge_text, language=None)
+                        st.success("Badge text displayed above - copy and paste to share!")
             
             else:
                 st.info("Complete your first analysis to start earning achievements!")
