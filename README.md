@@ -160,6 +160,13 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - **Green AI Community**: For inspiration and best practices
 
 ---
+## 👩‍💻 Author
+
+**Subuhana B**  
+GitHub: [@subuhana2303](https://github.com/subuhana2303)  
+Email: subuhanabasheer41@gmail.com
+
+---
 
 **Made with 💚 for sustainable coding practices**
 
